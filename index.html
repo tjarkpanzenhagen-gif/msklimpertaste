@@ -100,31 +100,34 @@
     ══════════════════════════════════════════════════════════════ */
     .nav{
       position:fixed;inset:0 0 auto;z-index:999;
-      background:rgba(250,243,232,0);
-      backdrop-filter:blur(0px);-webkit-backdrop-filter:blur(0px);
+      /* truly transparent at top – no backdrop-filter so Chromium doesn't paint a surface */
+      background:transparent;
       border-bottom:1px solid transparent;
       transition:
         background .4s var(--e),
-        backdrop-filter .4s var(--e),
-        box-shadow .4s var(--e),
+        box-shadow   .4s var(--e),
         border-color .4s var(--e),
-        transform .35s var(--e);
+        transform    .36s var(--e);
     }
-    /* detached state: navbar lifts off the page */
+    /* slides up when scrolling down */
+    .nav.hidden{
+      transform:translateY(-110%);
+    }
+    /* detached: glass card that "fell off" the top */
     .nav.detached{
-      background:rgba(250,243,232,.95);
+      background:rgba(250,243,232,.94);
       backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
       border-bottom:1px solid rgba(139,74,46,.1);
-      box-shadow:0 2px 0 rgba(139,74,46,.04), var(--sh2);
+      box-shadow:0 1px 0 rgba(139,74,46,.04), var(--sh2);
     }
-    /* brief pop-in when first detaching */
-    .nav.detaching{
-      animation:navPop .35s var(--e) forwards;
+    /* pop-in on first attach */
+    .nav.popin{
+      animation:navDown .38s var(--e) forwards;
     }
-    @keyframes navPop{
-      0%{transform:translateY(-4px);opacity:.7}
-      60%{transform:translateY(2px);opacity:1}
-      100%{transform:translateY(0);opacity:1}
+    @keyframes navDown{
+      0%  {transform:translateY(-100%)}
+      70% {transform:translateY(4px)}
+      100%{transform:translateY(0)}
     }
 
     .nav-bar{
@@ -151,16 +154,20 @@
     .nav.detached .nav-links a:hover,
     .nav.detached .nav-links a.active{color:var(--burg);background:rgba(139,74,46,.06)}
 
-    .nav-btn{flex-shrink:0;transition:var(--t)}
-    /* In hero: ghost button looks better than solid */
-    .nav .nav-btn{
-      background:rgba(250,243,232,.12);
-      color:var(--cream);
-      border-color:rgba(250,243,232,.45);
+    /* nav CTA: ghost over hero, solid when detached */
+    .nav-btn{
+      flex-shrink:0;
+      background:rgba(250,243,232,.13) !important;
+      color:var(--cream) !important;
+      border-color:rgba(250,243,232,.5) !important;
+      transition:background var(--t),border-color var(--t),transform var(--t),box-shadow var(--t);
     }
-    .nav .nav-btn:hover{background:rgba(250,243,232,.22);border-color:var(--cream)}
-    .nav.detached .nav-btn{background:var(--burg);color:var(--cream);border-color:var(--burg)}
-    .nav.detached .nav-btn:hover{background:var(--burg-d);border-color:var(--burg-d)}
+    .nav-btn:hover{background:rgba(250,243,232,.24) !important;border-color:var(--cream) !important}
+    .nav.detached .nav-btn{background:var(--burg) !important;border-color:var(--burg) !important}
+    .nav.detached .nav-btn:hover{
+      background:var(--burg-d) !important;border-color:var(--burg-d) !important;
+      transform:translateY(-2px);box-shadow:0 8px 20px rgba(139,74,46,.28);
+    }
 
     .burger{
       display:none;flex-direction:column;gap:5px;
@@ -1275,24 +1282,48 @@
 (function () {
   'use strict';
 
-  /* ── Nav: detach on scroll + active link ────────────────────── */
+  /* ── Nav: detach + hide-on-down / slide-in-on-up ────────────── */
   const nav      = document.getElementById('nav');
   const navAs    = document.querySelectorAll('.nav-links a[data-sec]');
   const sections = Array.from(navAs).map(a => document.getElementById(a.dataset.sec)).filter(Boolean);
 
-  let wasDetached = false;
+  let lastY      = 0;
+  let wasHidden  = false;
 
-  window.addEventListener('scroll', () => {
-    const shouldDetach = scrollY > 60;
+  function updateNav() {
+    const y          = scrollY;
+    const scrollingDn = y > lastY;
+    const detached    = y > 80;
 
-    // trigger pop animation only on the moment of detaching
-    if (shouldDetach && !wasDetached) {
-      nav.classList.add('detaching');
-      setTimeout(() => nav.classList.remove('detaching'), 400);
+    // detach / re-attach
+    nav.classList.toggle('detached', detached);
+
+    // hide when scrolling down past 200px, reveal when scrolling up
+    if (detached && scrollingDn && y > 200) {
+      if (!wasHidden) { nav.classList.add('hidden'); wasHidden = true; }
+    } else if (!scrollingDn) {
+      if (wasHidden) {
+        nav.classList.remove('hidden');
+        nav.classList.add('popin');
+        setTimeout(() => nav.classList.remove('popin'), 400);
+        wasHidden = false;
+      }
     }
 
-    nav.classList.toggle('detached', shouldDetach);
-    wasDetached = shouldDetach;
+    // at very top: fully transparent again, show nav
+    if (y < 10) {
+      nav.classList.remove('detached', 'hidden');
+      wasHidden = false;
+    }
+
+    lastY = y;
+  }
+
+  // check state immediately (browser may restore scroll on reload)
+  updateNav();
+
+  window.addEventListener('scroll', () => {
+    updateNav();
 
     // Active link
     const mid = scrollY + window.innerHeight / 2;
