@@ -108,11 +108,6 @@
     }
     .nav.detached{ padding:12px 20px }
 
-    /* slide away when scrolling down */
-    .nav.hidden{ transform:translateY(-130%) }
-
-    /* pop back down when scrolling up */
-    .nav.popin{ animation:navDown .4s var(--e) forwards }
     @keyframes navDown{
       0%  { transform:translateY(-110%) }
       65% { transform:translateY(4px)   }
@@ -1305,39 +1300,11 @@
   const navAs    = document.querySelectorAll('.nav-links a[data-sec]');
   const sections = Array.from(navAs).map(a => document.getElementById(a.dataset.sec)).filter(Boolean);
 
-  let lastY      = 0;
-  let wasHidden  = false;
-
   function updateNav() {
-    const y          = scrollY;
-    const scrollingDn = y > lastY;
-    const detached    = y > 80;
-
-    // detach / re-attach
-    nav.classList.toggle('detached', detached);
-
-    // hide when scrolling down past 200px, reveal when scrolling up
-    if (detached && scrollingDn && y > 200) {
-      if (!wasHidden) { nav.classList.add('hidden'); wasHidden = true; }
-    } else if (!scrollingDn) {
-      if (wasHidden) {
-        nav.classList.remove('hidden');
-        nav.classList.add('popin');
-        setTimeout(() => nav.classList.remove('popin'), 400);
-        wasHidden = false;
-      }
-    }
-
-    // at very top: fully transparent again, show nav
-    if (y < 10) {
-      nav.classList.remove('detached', 'hidden');
-      wasHidden = false;
-    }
-
-    lastY = y;
+    const y = scrollY;
+    nav.classList.toggle('detached', y > 80);
   }
 
-  // check state immediately (browser may restore scroll on reload)
   updateNav();
 
   window.addEventListener('scroll', () => {
