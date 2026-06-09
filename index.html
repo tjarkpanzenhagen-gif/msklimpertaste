@@ -98,41 +98,51 @@
     /* ══════════════════════════════════════════════════════════════
        NAV
     ══════════════════════════════════════════════════════════════ */
+    /* ── outer nav wrapper: always fixed, always transparent ──── */
     .nav{
       position:fixed;inset:0 0 auto;z-index:999;
-      /* truly transparent at top – no backdrop-filter so Chromium doesn't paint a surface */
       background:transparent;
-      border-bottom:1px solid transparent;
-      transition:
-        background .4s var(--e),
-        box-shadow   .4s var(--e),
-        border-color .4s var(--e),
-        transform    .36s var(--e);
+      pointer-events:none;        /* clicks pass through the gap around the pill */
+      padding:0;
+      transition:padding .45s var(--e), transform .36s var(--e);
     }
-    /* slides up when scrolling down */
-    .nav.hidden{
-      transform:translateY(-110%);
-    }
-    /* detached: glass card that "fell off" the top */
-    .nav.detached{
-      background:rgba(250,243,232,.94);
-      backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
-      border-bottom:1px solid rgba(139,74,46,.1);
-      box-shadow:0 1px 0 rgba(139,74,46,.04), var(--sh2);
-    }
-    /* pop-in on first attach */
-    .nav.popin{
-      animation:navDown .38s var(--e) forwards;
-    }
+    .nav.detached{ padding:12px 20px }
+
+    /* slide away when scrolling down */
+    .nav.hidden{ transform:translateY(-130%) }
+
+    /* pop back down when scrolling up */
+    .nav.popin{ animation:navDown .4s var(--e) forwards }
     @keyframes navDown{
-      0%  {transform:translateY(-100%)}
-      70% {transform:translateY(4px)}
-      100%{transform:translateY(0)}
+      0%  { transform:translateY(-110%) }
+      65% { transform:translateY(4px)   }
+      100%{ transform:translateY(0)     }
     }
 
+    /* ── nav-bar: the actual visible pill ───────────────────── */
+
     .nav-bar{
-      max-width:var(--mw);margin:0 auto;padding:0 24px;
+      max-width:var(--mw);margin:0 auto;padding:0 28px;
       height:68px;display:flex;align-items:center;justify-content:space-between;gap:20px;
+      pointer-events:all;           /* re-enable clicks on the pill itself */
+      border-radius:0;
+      background:transparent;
+      transition:
+        border-radius .45s var(--e),
+        background    .45s var(--e),
+        box-shadow    .45s var(--e),
+        height        .45s var(--e),
+        padding       .45s var(--e);
+    }
+    .nav.detached .nav-bar{
+      border-radius:18px;
+      background:rgba(250,243,232,.96);
+      backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+      box-shadow:
+        0 8px 40px rgba(139,74,46,.16),
+        0 0 0 1px rgba(139,74,46,.08);
+      height:58px;
+      padding:0 22px;
     }
 
     .nav-logo{
@@ -184,10 +194,18 @@
 
     .drawer{
       display:none;flex-direction:column;gap:2px;
-      background:var(--cream);border-top:1px solid rgba(107,30,60,.08);
+      background:var(--cream);border-top:1px solid rgba(139,74,46,.08);
       padding:12px 20px 24px;
+      pointer-events:all;
     }
     .drawer.open{display:flex}
+    .nav.detached .drawer{
+      margin:0 20px;
+      border-radius:0 0 18px 18px;
+      border:1px solid rgba(139,74,46,.1);
+      border-top:none;
+      box-shadow:0 12px 32px rgba(139,74,46,.14);
+    }
     .drawer a{
       padding:11px 14px;font-size:.95rem;font-weight:500;
       color:var(--ink);border-radius:var(--r);transition:var(--t);
